@@ -1,14 +1,10 @@
 package com.application.blank.security.jwt;
 
 import com.application.blank.security.dto.JwtDTO;
-import com.application.blank.security.entity.UsuarioPrincipal;
-import com.nimbusds.jwt.JWT;
-import com.nimbusds.jwt.JWTClaimsSet;
-import com.nimbusds.jwt.JWTParser;
+import com.application.blank.security.entity.PrincipalUser;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.SignatureException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,13 +13,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.text.ParseException;
 import java.time.Instant;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.List;
 
 @Component
@@ -46,12 +39,12 @@ public class JwtProvider {
     }
 
     public String generateToken(Authentication authentication) {
-        UsuarioPrincipal usuarioPrincipal = (UsuarioPrincipal) authentication.getPrincipal();
-        List<String> roles = usuarioPrincipal.getAuthorities().stream()
+        PrincipalUser principalUser = (PrincipalUser) authentication.getPrincipal();
+        List<String> roles = principalUser.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority).toList();
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put("sub", usuarioPrincipal.getUsername());
+        claims.put("sub", principalUser.getUsername());
         claims.put("roles", roles);
         claims.put("iat", Instant.now().getEpochSecond());
         claims.put("exp", Instant.now().plusSeconds(expiration).getEpochSecond());

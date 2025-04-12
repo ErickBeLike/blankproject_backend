@@ -1,6 +1,6 @@
 package com.application.blank.security.jwt;
 
-import com.application.blank.util.Mensaje;
+import com.application.blank.util.Message;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,10 +23,10 @@ public class JwtEntryPoint implements AuthenticationEntryPoint {
     public void commence(HttpServletRequest req, HttpServletResponse res, AuthenticationException e) throws IOException, ServletException {
         logger.error("fail en el método commence");
         //res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "no autorizado");
-        Mensaje mensaje = new Mensaje("token inválido o vacío");
+        Message message = new Message("token inválido o vacío");
         res.setContentType("application/json");
         res.setStatus(HttpStatus.UNAUTHORIZED.value());
-        res.getWriter().write(new ObjectMapper().writeValueAsString(mensaje));
+        res.getWriter().write(new ObjectMapper().writeValueAsString(message));
         res.getWriter().flush();
         res.getWriter().close();
     }

@@ -48,7 +48,7 @@ public class MainSecurity {
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
         http.authorizeHttpRequests(auth -> auth.requestMatchers("/auth/login",
-                        "/auth/nuevo",
+                        "/auth/new",
                         "/api/email/send",
                         "/auth/refresh").permitAll()
                 .anyRequest().authenticated());

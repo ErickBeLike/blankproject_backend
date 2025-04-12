@@ -4,21 +4,20 @@ package com.application.blank.security.service;
 import com.application.blank.exception.CustomException;
 import com.application.blank.security.blacklist.TokenBlacklist;
 import com.application.blank.security.dto.JwtDTO;
-import com.application.blank.security.dto.LoginUsuario;
-import com.application.blank.security.dto.NuevoUsuario;
+import com.application.blank.security.dto.LoginDTO;
+import com.application.blank.security.dto.NewUserDTO;
 import com.application.blank.security.entity.Rol;
-import com.application.blank.security.entity.Usuario;
-import com.application.blank.security.enums.RolNombre;
+import com.application.blank.security.entity.User;
+import com.application.blank.security.enums.RolName;
 import com.application.blank.security.jwt.JwtProvider;
-import com.application.blank.security.repository.UsuarioRepository;
-import com.application.blank.util.UsuarioRespuesta;
+import com.application.blank.security.repository.UserRepository;
+import com.application.blank.util.UserResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -29,10 +28,10 @@ import java.util.*;
 
 @Service
 @Transactional
-public class UsuarioService {
+public class UserService {
 
     @Autowired
-    UsuarioRepository usuarioRepository;
+    UserRepository userRepository;
 
     @Autowired
     PasswordEncoder passwordEncoder;
@@ -49,87 +48,87 @@ public class UsuarioService {
     @Autowired
     TokenBlacklist tokenBlacklist;
 
-    public Optional<Usuario> getByNombreUsuario(String nombreUsuario){
-        return usuarioRepository.findByNombreUsuario(nombreUsuario);
+    public Optional<User> getByUserName(String userName){
+        return userRepository.findByUserName(userName);
     }
 
-    public boolean existsByNombreUsuario(String nombreUsuario){
-        return usuarioRepository.existsByNombreUsuario(nombreUsuario);
+    public boolean existsByUserName(String userName){
+        return userRepository.existsByUserName(userName);
     }
 
-    public JwtDTO login(LoginUsuario loginUsuario){
+    public JwtDTO login(LoginDTO loginDTO){
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginUsuario.getNombreUsuario(), loginUsuario.getContrasena()));
+                new UsernamePasswordAuthenticationToken(loginDTO.getUserName(), loginDTO.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtProvider.generateToken(authentication);
 
         return new JwtDTO(jwt);
     }
 
-    public UsuarioRespuesta save(NuevoUsuario nuevoUsuario) {
-        if (usuarioRepository.existsByNombreUsuario(nuevoUsuario.getNombreUsuario())) {
+    public UserResponse save(NewUserDTO newUserDTO) {
+        if (userRepository.existsByUserName(newUserDTO.getUserName())) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "ese nombre de usuario ya existe");
         }
-        String contrasena = nuevoUsuario.getContrasena().trim();
+        String contrasena = newUserDTO.getPassword().trim();
         if (contrasena.isEmpty()) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "contraseña inválida");
         }
-        Usuario usuario = new Usuario(nuevoUsuario.getNombreUsuario(),
+        User user = new User(newUserDTO.getUserName(),
                 passwordEncoder.encode(contrasena));
 
         Set<Rol> roles = new HashSet<>();
-        roles.add(rolService.getByRolNombre(RolNombre.ROLE_USER).get());
-        if (nuevoUsuario.getRoles().contains("admin")) {
-            roles.add(rolService.getByRolNombre(RolNombre.ROLE_ADMIN).get());
+        roles.add(rolService.getByRolName(RolName.ROLE_USER).get());
+        if (newUserDTO.getRoles().contains("admin")) {
+            roles.add(rolService.getByRolName(RolName.ROLE_ADMIN).get());
         }
-        usuario.setRoles(roles);
-        usuarioRepository.save(usuario);
-        return new UsuarioRespuesta(usuario.getNombreUsuario() + " ha sido creado", usuario);
+        user.setRoles(roles);
+        userRepository.save(user);
+        return new UserResponse(user.getUserName() + " ha sido creado", user);
     }
 
-    public List<Usuario> obtenerTodosLosUsuarios() {
-        return usuarioRepository.findAll();
+    public List<User> getAllTheUsers() {
+        return userRepository.findAll();
     }
 
-    public Usuario obtenerUsuarioPorId(Integer id) {
-        return usuarioRepository.findById(id)
+    public User getUserById(Integer id) {
+        return userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "No se encontró un usuario para el ID: " + id));
     }
 
-    public Usuario actualizarUsuario(Integer id, NuevoUsuario nuevoUsuario) {
-        Usuario usuario = usuarioRepository.findById(id)
+    public User updateUser(Integer id, NewUserDTO newUserDTO) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "No se encontró un usuario para el ID: " + id));
 
-        String contrasena = nuevoUsuario.getContrasena().trim();
-        if (contrasena.isEmpty()) {
+        String password = newUserDTO.getPassword().trim();
+        if (password.isEmpty()) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "contraseña inválida");
         }
 
-        usuario.setNombreUsuario(nuevoUsuario.getNombreUsuario());
-        usuario.setContrasena(passwordEncoder.encode(contrasena));
+        user.setUserName(newUserDTO.getUserName());
+        user.setPassword(passwordEncoder.encode(password));
 
         Set<Rol> roles = new HashSet<>();
-        roles.add(rolService.getByRolNombre(RolNombre.ROLE_USER).get());
-        if (nuevoUsuario.getRoles().contains("admin")) {
-            roles.add(rolService.getByRolNombre(RolNombre.ROLE_ADMIN).get());
+        roles.add(rolService.getByRolName(RolName.ROLE_USER).get());
+        if (newUserDTO.getRoles().contains("admin")) {
+            roles.add(rolService.getByRolName(RolName.ROLE_ADMIN).get());
         }
-        usuario.setRoles(roles);
+        user.setRoles(roles);
 
         /**
          * Modificación de la fecha dde actualización
          */
-        usuario.setFechaActualizacion(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
 
-        usuarioRepository.save(usuario);
+        userRepository.save(user);
 
-        return usuario;
+        return user;
     }
 
-    public Map<String, Boolean> eliminarUsuario(Integer id) {
-        Usuario usuario = usuarioRepository.findById(id)
+    public Map<String, Boolean> deleteUser(Integer id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "No se encontró un usuario para el ID: " + id));
 
-        usuarioRepository.delete(usuario);
+        userRepository.delete(user);
 
         Map<String, Boolean> response = new HashMap<>();
         response.put("eliminado", Boolean.TRUE);

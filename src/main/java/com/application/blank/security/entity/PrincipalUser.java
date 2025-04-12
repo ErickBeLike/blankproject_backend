@@ -8,22 +8,22 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class UsuarioPrincipal implements UserDetails {
-    private String nombreUsuario;
-    private String contrasena;
+public class PrincipalUser implements UserDetails {
+    private String userName;
+    private String password;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public UsuarioPrincipal(String nombreUsuario,String contrasena, Collection<? extends GrantedAuthority> authorities) {
-        this.nombreUsuario = nombreUsuario;
-        this.contrasena = contrasena;
+    public PrincipalUser(String userName, String password, Collection<? extends GrantedAuthority> authorities) {
+        this.userName = userName;
+        this.password = password;
         this.authorities = authorities;
     }
 
-    public static UsuarioPrincipal build(Usuario usuario){
+    public static PrincipalUser build(User user){
         List<GrantedAuthority> authorities =
-                usuario.getRoles().stream().map(rol -> new SimpleGrantedAuthority(rol
-                        .getRolNombre().name())).collect(Collectors.toList());
-        return new UsuarioPrincipal(usuario.getNombreUsuario(), usuario.getContrasena(), authorities);
+                user.getRoles().stream().map(rol -> new SimpleGrantedAuthority(rol
+                        .getRolName().name())).collect(Collectors.toList());
+        return new PrincipalUser(user.getUserName(), user.getPassword(), authorities);
     }
 
     @Override
@@ -33,12 +33,12 @@ public class UsuarioPrincipal implements UserDetails {
 
     @Override
     public String getPassword() {
-        return contrasena;
+        return password;
     }
 
     @Override
     public String getUsername() {
-        return nombreUsuario;
+        return userName;
     }
 
     @Override

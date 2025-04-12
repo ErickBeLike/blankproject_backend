@@ -1,7 +1,7 @@
 package com.application.blank.util;
 
 import com.application.blank.security.entity.Rol;
-import com.application.blank.security.enums.RolNombre;
+import com.application.blank.security.enums.RolName;
 import com.application.blank.security.service.RolService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -23,11 +23,13 @@ public class CreateRoles implements CommandLineRunner {
         /**
          * Sección a descomentar para crear roles
          */
+
 /*
-        Rol rolAdmin = new Rol(RolNombre.ROLE_ADMIN);
-         Rol rolUser = new Rol(RolNombre.ROLE_USER);
+        Rol rolAdmin = new Rol(RolName.ROLE_ADMIN);
+         Rol rolUser = new Rol(RolName.ROLE_USER);
          rolService.save(rolAdmin);
          rolService.save(rolUser);
-*/
+ */
+
     }
 }

@@ -1,7 +1,7 @@
 package com.application.blank.security.service;
 
 import com.application.blank.security.entity.Rol;
-import com.application.blank.security.enums.RolNombre;
+import com.application.blank.security.enums.RolName;
 import com.application.blank.security.repository.RolRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,8 +15,8 @@ public class RolService {
     @Autowired
     RolRepository rolRepository;
 
-    public Optional<Rol> getByRolNombre(RolNombre rolNombre) {
-        return rolRepository.findByRolNombre(rolNombre);
+    public Optional<Rol> getByRolName(RolName rolName) {
+        return rolRepository.findByRolName(rolName);
     }
 
     public void save(Rol rol){

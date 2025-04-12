@@ -1,38 +1,38 @@
 package com.application.blank.security.entity;
 
-import com.application.blank.security.enums.RolNombre;
+import com.application.blank.security.enums.RolName;
 import jakarta.persistence.*;
 
 @Entity
 public class Rol {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_rol")
-    private int idRol;
-    @Column(name = "rol_nombre", nullable = false)
+    @Column()
+    private int rolId;
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private RolNombre rolNombre;
+    private RolName rolName;
 
     public Rol() {
     }
 
-    public Rol(RolNombre rolNombre) {
-        this.rolNombre = rolNombre;
+    public Rol(RolName rolName) {
+        this.rolName = rolName;
     }
 
-    public int getIdRol() {
-        return idRol;
+    public int getRolId() {
+        return rolId;
     }
 
-    public void setIdRol(int idRol) {
-        this.idRol = idRol;
+    public void setRolId(int rolId) {
+        this.rolId = rolId;
     }
 
-    public RolNombre getRolNombre() {
-        return rolNombre;
+    public RolName getRolName() {
+        return rolName;
     }
 
-    public void setRolNombre(RolNombre rolNombre) {
-        this.rolNombre = rolNombre;
+    public void setRolName(RolName rolName) {
+        this.rolName = rolName;
     }
 }

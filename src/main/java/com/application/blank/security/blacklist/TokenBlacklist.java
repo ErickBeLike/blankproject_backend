@@ -32,6 +32,7 @@ public class TokenBlacklist {
     }
 
     @Scheduled(fixedRate = 60 * 60 * 1000) // cada hora
+    //@Scheduled(fixedRate = 15 * 1000) // cada 5 minutos
     public void cleanExpiredTokens() {
         long now = Instant.now().getEpochSecond();
         int before = blacklist.size();
