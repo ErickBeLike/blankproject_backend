@@ -53,4 +53,5 @@ public class ClientController {
     public Map<String, Boolean> deleteClient(@PathVariable Long id) throws ResourceNotFoundException {
         return clientService.deleteClient(id);
     }
+
 }

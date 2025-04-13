@@ -1,7 +1,5 @@
 package com.application.blank.dto.client;
 
-import com.application.blank.entity.person.Person;
-
 public class ClientDTO {
     private Long clientId;
 

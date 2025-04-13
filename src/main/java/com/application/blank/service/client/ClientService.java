@@ -116,7 +116,6 @@ public class ClientService {
         return dto;
     }
 
-
     // Map DTO to Entity
     private Client mapToEntity(ClientDTO dto) {
         // Build Person entity from flat DTO fields
