@@ -58,7 +58,7 @@ public class UserService {
 
     public JwtDTO login(LoginDTO loginDTO){
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginDTO.getUserName(), loginDTO.getPassword()));
+                new UsernamePasswordAuthenticationToken(loginDTO.getUsernameOrEmail(), loginDTO.getPassword()));
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtProvider.generateToken(authentication);
 
@@ -69,33 +69,47 @@ public class UserService {
         if (userRepository.existsByUserName(newUserDTO.getUserName())) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "ese nombre de usuario ya existe");
         }
+
+        if (userRepository.existsByEmail(newUserDTO.getEmail())) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "ese correo ya está en uso");
+        }
+
         String contrasena = newUserDTO.getPassword().trim();
         if (contrasena.isEmpty()) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "contraseña inválida");
         }
-        User user = new User(newUserDTO.getUserName(),
-                passwordEncoder.encode(contrasena));
+
+        User user = new User(
+                newUserDTO.getUserName(),
+                newUserDTO.getEmail(),
+                passwordEncoder.encode(contrasena)
+        );
+        user.setEmail(newUserDTO.getEmail());
 
         Set<Rol> roles = new HashSet<>();
         roles.add(rolService.getByRolName(RolName.ROLE_USER).get());
+
         if (newUserDTO.getRoles().contains("admin")) {
             roles.add(rolService.getByRolName(RolName.ROLE_ADMIN).get());
         }
+
         user.setRoles(roles);
         userRepository.save(user);
+
         return new UserResponse(user.getUserName() + " ha sido creado", user);
     }
+
 
     public List<User> getAllTheUsers() {
         return userRepository.findAll();
     }
 
-    public User getUserById(Integer id) {
+    public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "No se encontró un usuario para el ID: " + id));
     }
 
-    public User updateUser(Integer id, NewUserDTO newUserDTO) {
+    public User updateUser(Long id, NewUserDTO newUserDTO) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "No se encontró un usuario para el ID: " + id));
 
@@ -124,7 +138,7 @@ public class UserService {
         return user;
     }
 
-    public Map<String, Boolean> deleteUser(Integer id) {
+    public Map<String, Boolean> deleteUser(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "No se encontró un usuario para el ID: " + id));
 

@@ -8,11 +8,17 @@ public class NewUserDTO {
     @NotBlank(message = "nombre de usuario obligatorio")
     private String userName;
     @NotBlank
+    private String email;
+    @NotBlank
     private String password;
     private Set<String> roles;
 
-    public NewUserDTO(String userName, String password, Set<String> roles) {
+    public NewUserDTO() {
+    }
+
+    public NewUserDTO(String userName, String email, String password, Set<String> roles) {
         this.userName = userName;
+        this.email = email;
         this.password = password;
         this.roles = roles;
     }
@@ -23,6 +29,14 @@ public class NewUserDTO {
 
     public void setUserName(@NotBlank(message = "nombre de usuario obligatorio") String userName) {
         this.userName = userName;
+    }
+
+    public @NotBlank String getEmail() {
+        return email;
+    }
+
+    public void setEmail(@NotBlank String email) {
+        this.email = email;
     }
 
     public @NotBlank String getPassword() {

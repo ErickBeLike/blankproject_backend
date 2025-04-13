@@ -1,6 +1,8 @@
 package com.application.blank.security.entity;
 
+import com.application.blank.entity.employee.Employee;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import org.antlr.v4.runtime.misc.NotNull;
 
 import java.time.LocalDateTime;
@@ -13,15 +15,20 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
-    private int userId;
+    private Long userId;
     @Column(nullable = false, unique = true)
     private String userName;
+    @Column(nullable = false, unique = true)
+    private String email;
     @Column(nullable = false)
     private String password;
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(joinColumns = @JoinColumn(name = "user_id"),
     inverseJoinColumns = @JoinColumn(name = "rol_id"))
     private Set<Rol> roles = new HashSet<>();
+
+    @OneToOne(mappedBy = "user")  // Relación bidireccional
+    private Employee employee;
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
@@ -42,16 +49,19 @@ public class User {
     public User() {
     }
 
-    public User(@NotNull String userName, @NotNull String password) {
+    public User(@NotBlank String userName, @NotBlank String email, @NotBlank String password) {
         this.userName = userName;
+        this.email = email;
         this.password = password;
     }
 
-    public int getUserId() {
+
+
+    public Long getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
+    public void setUserId(Long userId) {
         this.userId = userId;
     }
 
@@ -61,6 +71,14 @@ public class User {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassword() {

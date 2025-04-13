@@ -5,16 +5,17 @@ import jakarta.validation.constraints.NotBlank;
 
 public class LoginDTO {
     @NotBlank(message = "nombre de usuario/email obligatorio")
-    private String userName;
+    private String usernameOrEmail;
+
     @NotBlank(message = "contraseña obligatoria")
     private String password;
 
-    public String getUserName() {
-        return userName;
+    public String getUsernameOrEmail() {
+        return usernameOrEmail;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUsernameOrEmail(String usernameOrEmail) {
+        this.usernameOrEmail = usernameOrEmail;
     }
 
     public String getPassword() {
@@ -25,3 +26,4 @@ public class LoginDTO {
         this.password = password;
     }
 }
+

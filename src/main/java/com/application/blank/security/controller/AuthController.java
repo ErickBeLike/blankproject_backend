@@ -42,19 +42,19 @@ public class AuthController {
     }
 
     @GetMapping("/get/{id}")
-    public ResponseEntity<User> getUserById(@PathVariable Integer id) {
+    public ResponseEntity<User> getUserById(@PathVariable Long id) {
         User user = userService.getUserById(id);
         return ResponseEntity.ok(user);
     }
 
     @PutMapping("/update/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Integer id, @Valid @RequestBody NewUserDTO newUserDTO) {
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody NewUserDTO newUserDTO) {
         User userActualizado = userService.updateUser(id, newUserDTO);
         return ResponseEntity.ok(userActualizado);
     }
 
     @DeleteMapping("/delete/{id}")
-    public ResponseEntity<Map<String, Boolean>> deleteUser(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, Boolean>> deleteUser(@PathVariable Long id) {
         Map<String, Boolean> response = userService.deleteUser(id);
         return ResponseEntity.ok(response);
     }
