@@ -14,6 +14,8 @@ public class Prices {
     @Column
     private String priceName;
     @Column
+    private int daysAmount;
+    @Column
     private Double price;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -37,8 +39,9 @@ public class Prices {
     public Prices() {
     }
 
-    public Prices(String priceName, Double price, Room room, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Prices(String priceName, int daysAmount, Double price, Room room, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.priceName = priceName;
+        this.daysAmount = daysAmount;
         this.price = price;
         this.room = room;
         this.createdAt = createdAt;
@@ -59,6 +62,14 @@ public class Prices {
 
     public void setPriceName(String priceName) {
         this.priceName = priceName;
+    }
+
+    public int getDaysAmount() {
+        return daysAmount;
+    }
+
+    public void setDaysAmount(int daysAmount) {
+        this.daysAmount = daysAmount;
     }
 
     public Double getPrice() {

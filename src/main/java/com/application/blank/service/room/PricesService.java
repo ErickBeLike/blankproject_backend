@@ -28,6 +28,7 @@ public class PricesService {
 
         Prices price = new Prices();
         price.setPriceName(dto.getPriceName());
+        price.setDaysAmount(dto.getDaysAmount());
         price.setPrice(dto.getPrice());
         price.setRoom(room);
 
@@ -40,6 +41,7 @@ public class PricesService {
                 .orElseThrow(() -> new ResourceNotFoundException("Price not found for ID: " + priceId));
 
         price.setPriceName(dto.getPriceName());
+        price.setDaysAmount(dto.getDaysAmount());
         price.setPrice(dto.getPrice());
 
         return mapToDTO(pricesRepository.save(price));
@@ -65,6 +67,7 @@ public class PricesService {
         PricesDTO dto = new PricesDTO();
         dto.setPriceId(price.getPriceId());
         dto.setPriceName(price.getPriceName());
+        dto.setDaysAmount(price.getDaysAmount());
         dto.setPrice(price.getPrice());
         dto.setCreatedAt(price.getCreatedAt());
         dto.setUpdatedAt(price.getUpdatedAt());

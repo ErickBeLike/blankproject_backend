@@ -6,6 +6,7 @@ public class PricesDTO {
     private Long   priceId;
 
     private String priceName;
+    private int daysAmount;
     private Double price;
 
     private LocalDateTime createdAt;
@@ -14,9 +15,10 @@ public class PricesDTO {
     public PricesDTO() {
     }
 
-    public PricesDTO(Long priceId, String priceName, Double price, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public PricesDTO(Long priceId, String priceName, int daysAmount, Double price, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.priceId = priceId;
         this.priceName = priceName;
+        this.daysAmount = daysAmount;
         this.price = price;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -36,6 +38,14 @@ public class PricesDTO {
 
     public void setPriceName(String priceName) {
         this.priceName = priceName;
+    }
+
+    public int getDaysAmount() {
+        return daysAmount;
+    }
+
+    public void setDaysAmount(int daysAmount) {
+        this.daysAmount = daysAmount;
     }
 
     public Double getPrice() {
