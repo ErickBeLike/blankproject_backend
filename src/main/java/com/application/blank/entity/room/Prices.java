@@ -2,6 +2,7 @@ package com.application.blank.entity.room;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -16,7 +17,9 @@ public class Prices {
     @Column
     private int daysAmount;
     @Column
-    private Double price;
+    private BigDecimal price;
+    @Column
+    private BigDecimal deposit;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_id")
@@ -39,10 +42,17 @@ public class Prices {
     public Prices() {
     }
 
-    public Prices(String priceName, int daysAmount, Double price, Room room, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public Prices(String priceName,
+                  int daysAmount,
+                  BigDecimal price,
+                  BigDecimal deposit,
+                  Room room,
+                  LocalDateTime createdAt,
+                  LocalDateTime updatedAt) {
         this.priceName = priceName;
         this.daysAmount = daysAmount;
         this.price = price;
+        this.deposit = deposit;
         this.room = room;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -72,12 +82,20 @@ public class Prices {
         this.daysAmount = daysAmount;
     }
 
-    public Double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(Double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
+    }
+
+    public BigDecimal getDeposit() {
+        return deposit;
+    }
+
+    public void setDeposit(BigDecimal deposit) {
+        this.deposit = deposit;
     }
 
     public Room getRoom() {

@@ -30,6 +30,7 @@ public class PricesService {
         price.setPriceName(dto.getPriceName());
         price.setDaysAmount(dto.getDaysAmount());
         price.setPrice(dto.getPrice());
+        price.setDeposit(dto.getDeposit());
         price.setRoom(room);
 
         return mapToDTO(pricesRepository.save(price));
@@ -43,6 +44,7 @@ public class PricesService {
         price.setPriceName(dto.getPriceName());
         price.setDaysAmount(dto.getDaysAmount());
         price.setPrice(dto.getPrice());
+        price.setDeposit(dto.getDeposit());
 
         return mapToDTO(pricesRepository.save(price));
     }
@@ -69,6 +71,7 @@ public class PricesService {
         dto.setPriceName(price.getPriceName());
         dto.setDaysAmount(price.getDaysAmount());
         dto.setPrice(price.getPrice());
+        dto.setDeposit(price.getDeposit());
         dto.setCreatedAt(price.getCreatedAt());
         dto.setUpdatedAt(price.getUpdatedAt());
         return dto;
