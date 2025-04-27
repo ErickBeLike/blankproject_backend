@@ -9,6 +9,7 @@ import com.application.blank.entity.room.Prices;
 import com.application.blank.entity.room.Room;
 import com.application.blank.entity.room.RoomStatus;
 import com.application.blank.exception.ResourceNotFoundException;
+import com.application.blank.mapper.reservation.ReservationMapper;
 import com.application.blank.repository.client.ClientRepository;
 import com.application.blank.repository.reservation.ReservationRepository;
 import com.application.blank.repository.room.PricesRepository;
@@ -29,77 +30,39 @@ public class ReservationService {
     @Autowired private ClientRepository    clientRepository;
     @Autowired private RoomRepository      roomRepository;
     @Autowired private PricesRepository    pricesRepository;
+    @Autowired private ReservationMapper reservationMapper;
+
 
     // Obtener todas las reservas
     public List<ReservationDTO> getAllReservations() {
         return reservationRepository.findAll()
                 .stream()
-                .map(this::mapToDTO)
+                .map(reservationMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
 
     // Obtener reserva por ID
     public ReservationDTO getReservationById(Long id) throws ResourceNotFoundException {
         Reservation r = reservationRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Reservation not found for ID: " + id));
-        return mapToDTO(r);
+        return reservationMapper.toDTO(r);
     }
 
     // Crear nueva reserva
     @Transactional
     public ReservationDTO saveReservation(ReservationDTO dto) throws ResourceNotFoundException {
-        Client client = clientRepository.findById(dto.getClient())
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found for ID: " + dto.getClient()));
-        Room room = roomRepository.findById(dto.getRoom())
-                .orElseThrow(() -> new ResourceNotFoundException("Room not found for ID: "   + dto.getRoom()));
-        Prices priceEnt = pricesRepository.findById(dto.getPrice())
-                .orElseThrow(() -> new ResourceNotFoundException("Price not found for ID: "  + dto.getPrice()));
+        Reservation res = reservationMapper.toEntity(dto);
 
-        if (room.getRoomStatus() != RoomStatus.AVAILABLE) {
-            throw new IllegalStateException("Room is not available for reservation.");
-        }
-
-        // 1) Construimos la entidad
-        Reservation res = new Reservation();
-        res.setClient(client);
-        res.setRoom(room);
-        res.setPrice(priceEnt);           // <-- asignamos la ENTIDAD Prices
-        res.setEnded(false);
-
-        // 2) Calculamos días y fechas
-        int periods      = dto.getReservationDaysAmount();
-        int daysPerPrice = priceEnt.getDaysAmount();
-        int totalDays    = periods * daysPerPrice;
-        res.setReservationDaysAmount(totalDays);
-
-        LocalDateTime start = LocalDateTime.now();
-        res.setStartDate(start);
-        res.setEndDate(start.plusDays(totalDays));
-
-        // 3) Depósito y total
-        res.setDeposit(priceEnt.getDeposit());
-        BigDecimal subtotal = priceEnt.getPrice().multiply(BigDecimal.valueOf(periods));
-        res.setTotal(subtotal.add(priceEnt.getDeposit()));
-
-        // 4) Generamos los pagos
-        List<Payments> pagos = new ArrayList<>();
-        for (int i = 0; i < periods; i++) {
-            Payments p = new Payments();
-            p.setReservation(res);
-            p.setAmount(priceEnt.getPrice());
-            p.setPaid(false);
-            pagos.add(p);
-        }
-        res.setPayments(pagos);
-
-        // 5) Marcamos habitación ocupada
+        // Marcamos la habitación como ocupada
+        Room room = res.getRoom();
         room.setRoomStatus(RoomStatus.OCCUPIED);
         roomRepository.save(room);
 
-        // 6) Guardamos y devolvemos DTO
         Reservation saved = reservationRepository.save(res);
-        return mapToDTO(saved);
+        return reservationMapper.toDTO(saved);
     }
+
 
     // Actualizar una reserva existente
     @Transactional
@@ -192,7 +155,7 @@ public class ReservationService {
 
         // Guardar; gracias al CascadeType.ALL se persisten también los cambios en Payments
         Reservation updated = reservationRepository.save(existing);
-        return mapToDTO(updated);
+        return reservationMapper.toDTO(updated);
     }
 
     // Eliminar reserva
@@ -209,29 +172,4 @@ public class ReservationService {
         return Collections.singletonMap("deleted", Boolean.TRUE);
     }
 
-    // Map Entity → DTO (extrae priceId de la entidad Prices)
-    private ReservationDTO mapToDTO(Reservation r) {
-        ReservationDTO dto = new ReservationDTO();
-        dto.setReservationId(r.getReservationId());
-        dto.setClient(r.getClient().getClientId());
-        dto.setRoom(r.getRoom().getRoomId());
-        dto.setPrice(r.getPrice().getPriceId());            // <-- aquí
-        dto.setStartDate(r.getStartDate());
-        dto.setEndDate(r.getEndDate());
-        dto.setReservationDaysAmount(r.getReservationDaysAmount());
-        dto.setDeposit(r.getDeposit());
-        dto.setTotal(r.getTotal());
-        dto.setEnded(r.isEnded());
-        dto.setCreateAt(r.getCreatedAt());
-        dto.setUpdateAt(r.getUpdatedAt());
-        dto.setPayments(r.getPayments().stream().map(p -> {
-            PaymentsDTO pd = new PaymentsDTO();
-            pd.setPaymentsId(p.getPaymentsId());
-            pd.setReservation(p.getReservation().getReservationId());
-            pd.setAmount(p.getAmount());
-            pd.setPaid(p.isPaid());
-            return pd;
-        }).collect(Collectors.toList()));
-        return dto;
-    }
 }
