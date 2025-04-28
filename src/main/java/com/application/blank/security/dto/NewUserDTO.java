@@ -1,10 +1,13 @@
 package com.application.blank.security.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.Set;
 
 public class NewUserDTO {
+    private MultipartFile profileImage;
     @NotBlank(message = "nombre de usuario obligatorio")
     private String userName;
     @NotBlank
@@ -13,10 +16,14 @@ public class NewUserDTO {
     private String password;
     private Set<String> roles;
 
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
     public NewUserDTO() {
     }
 
-    public NewUserDTO(String userName, String email, String password, Set<String> roles) {
+    public NewUserDTO(MultipartFile profileImage, String userName, String email, String password, Set<String> roles) {
+        this.profileImage = profileImage;
         this.userName = userName;
         this.email = email;
         this.password = password;
@@ -53,5 +60,29 @@ public class NewUserDTO {
 
     public void setRoles(Set<String> roles) {
         this.roles = roles;
+    }
+
+    public MultipartFile getProfileImage() {
+        return profileImage;
+    }
+
+    public void setProfileImage(MultipartFile profileImage) {
+        this.profileImage = profileImage;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }

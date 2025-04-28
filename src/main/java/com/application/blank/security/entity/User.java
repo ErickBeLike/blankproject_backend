@@ -16,6 +16,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(nullable = false)
     private Long userId;
+
+    @Column(columnDefinition = "TEXT")
+    private String profilePictureUrl;
+
     @Column(nullable = false, unique = true)
     private String userName;
     @Column(nullable = false, unique = true)
@@ -32,7 +36,6 @@ public class User {
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
-
     @Column()
     private LocalDateTime updatedAt;
 
@@ -40,7 +43,6 @@ public class User {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
     }
-
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
@@ -54,8 +56,6 @@ public class User {
         this.email = email;
         this.password = password;
     }
-
-
 
     public Long getUserId() {
         return userId;
@@ -95,6 +95,22 @@ public class User {
 
     public void setRoles(Set<Rol> roles) {
         this.roles = roles;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
+    }
+
+    public Employee getEmployee() {
+        return employee;
+    }
+
+    public void setEmployee(Employee employee) {
+        this.employee = employee;
     }
 
     public LocalDateTime getCreatedAt() {

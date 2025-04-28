@@ -7,10 +7,15 @@ import com.application.blank.security.dto.NewUserDTO;
 import com.application.blank.security.entity.User;
 import com.application.blank.security.service.UserService;
 import com.application.blank.util.UserResponse;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.text.ParseException;
 import java.util.List;
@@ -24,11 +29,20 @@ public class AuthController {
     @Autowired
     UserService userService;
 
-    @PostMapping("/new")
-    public ResponseEntity<UserResponse> nuevo(@Valid @RequestBody NewUserDTO newUserDTO) {
-        UserResponse respuesta = userService.save(newUserDTO);
-        return ResponseEntity.ok(respuesta);
+    @PostMapping(value = "/new", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse> save(
+            @Valid @ModelAttribute NewUserDTO newUserDTO,
+            @RequestParam(value = "profileImage", required = false) MultipartFile profileImage,
+            HttpServletRequest request) {
+        // Construye el baseUrl dinámicamente:
+        String baseUrl = ServletUriComponentsBuilder.fromRequestUri(request)
+                .replacePath(null)
+                .build()
+                .toUriString();
+        UserResponse respuesta = userService.save(newUserDTO, profileImage, baseUrl);
+        return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
     }
+
 
     @PostMapping("/login")
     public ResponseEntity<JwtDTO> login(@Valid @RequestBody LoginDTO loginDTO){

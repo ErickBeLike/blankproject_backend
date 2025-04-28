@@ -5,11 +5,9 @@ import com.application.blank.security.entity.User;
 
 public class UserResponse {
     private String mensaje;
-    private User user;
 
-    public UserResponse(String mensaje, User user) {
+    public UserResponse(String mensaje) {
         this.mensaje = mensaje;
-        this.user = user;
     }
 
     // Getters y Setters
@@ -21,11 +19,4 @@ public class UserResponse {
         this.mensaje = mensaje;
     }
 
-    public User getUsuario() {
-        return user;
-    }
-
-    public void setUsuario(User user) {
-        this.user = user;
-    }
 }

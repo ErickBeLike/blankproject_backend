@@ -11,6 +11,7 @@ import com.application.blank.security.entity.User;
 import com.application.blank.security.enums.RolName;
 import com.application.blank.security.jwt.JwtProvider;
 import com.application.blank.security.repository.UserRepository;
+import com.application.blank.service.file.StorageService;
 import com.application.blank.util.UserResponse;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,6 +22,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.text.ParseException;
 import java.time.LocalDateTime;
@@ -48,6 +50,9 @@ public class UserService {
     @Autowired
     TokenBlacklist tokenBlacklist;
 
+    @Autowired
+    StorageService storageService;
+
     public Optional<User> getByUserName(String userName){
         return userRepository.findByUserName(userName);
     }
@@ -65,38 +70,62 @@ public class UserService {
         return new JwtDTO(jwt);
     }
 
-    public UserResponse save(NewUserDTO newUserDTO) {
-        if (userRepository.existsByUserName(newUserDTO.getUserName())) {
+    public UserResponse save(NewUserDTO dto,
+                             MultipartFile profileImage,
+                             String baseUrl) {
+        // 1) Validaciones de existencia
+        if (userRepository.existsByUserName(dto.getUserName())) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "ese nombre de usuario ya existe");
         }
-
-        if (userRepository.existsByEmail(newUserDTO.getEmail())) {
+        if (userRepository.existsByEmail(dto.getEmail())) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "ese correo ya está en uso");
         }
 
-        String contrasena = newUserDTO.getPassword().trim();
-        if (contrasena.isEmpty()) {
+        // 2) Validación contraseña
+        String rawPassword = dto.getPassword().trim();
+        if (rawPassword.isEmpty()) {
             throw new CustomException(HttpStatus.BAD_REQUEST, "contraseña inválida");
         }
 
+        // 3) Crear entidad User
         User user = new User(
-                newUserDTO.getUserName(),
-                newUserDTO.getEmail(),
-                passwordEncoder.encode(contrasena)
+                dto.getUserName(),
+                dto.getEmail(),
+                passwordEncoder.encode(rawPassword)
         );
-        user.setEmail(newUserDTO.getEmail());
 
+        // 4) Asignar roles
         Set<Rol> roles = new HashSet<>();
-        roles.add(rolService.getByRolName(RolName.ROLE_USER).get());
+        roles.add(rolService.getByRolName(RolName.ROLE_USER)
+                .orElseThrow(() -> new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "rol USER no encontrado")));
+        if (dto.getRoles() != null && dto.getRoles().contains("admin")) {
+            roles.add(rolService.getByRolName(RolName.ROLE_ADMIN)
+                    .orElseThrow(() -> new CustomException(HttpStatus.INTERNAL_SERVER_ERROR, "rol ADMIN no encontrado")));
+        }
+        user.setRoles(roles);
 
-        if (newUserDTO.getRoles().contains("admin")) {
-            roles.add(rolService.getByRolName(RolName.ROLE_ADMIN).get());
+        // 5) Procesar imagen de perfil
+        if (profileImage != null && !profileImage.isEmpty()) {
+            try {
+                String filename = storageService.saveFile(
+                        profileImage,
+                        profileImage.getOriginalFilename(),
+                        "profileimages"
+                );
+                // ej. http://mi-dominio.com/mediafiles/profileimages/uuid.png
+                String imageUrl = baseUrl + "/mediafiles/profileimages/" + filename;
+                user.setProfilePictureUrl(imageUrl);
+            } catch (Exception e) {
+                throw new CustomException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Error al procesar imagen de perfil: " + e.getMessage()
+                );
+            }
         }
 
-        user.setRoles(roles);
+        // 6) Persistir y devolver respuesta
         userRepository.save(user);
-
-        return new UserResponse(user.getUserName() + " ha sido creado", user);
+        return new UserResponse(user.getUserName() + " ha sido creado");
     }
 
 
