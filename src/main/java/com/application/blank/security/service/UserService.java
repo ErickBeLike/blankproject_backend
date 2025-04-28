@@ -173,9 +173,17 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(rawPassword));
 
         // 4) Actualizar userName
-        user.setUserName(dto.getUserName());
+        if (!dto.getUserName().equals(user.getUserName())) {
+            if (userRepository.existsByUserName(dto.getUserName())) {
+                throw new CustomException(
+                        HttpStatus.BAD_REQUEST,
+                        "ese nombre de usuario ya existe"
+                );
+            }
+            user.setUserName(dto.getUserName());
+        }
 
-        // 5) Actualizar roles
+        // 5) Asignar roles (igual que antes)
         Set<Rol> roles = new HashSet<>();
         roles.add(rolService.getByRolName(RolName.ROLE_USER)
                 .orElseThrow(() -> new CustomException(
@@ -191,40 +199,35 @@ public class UserService {
         }
         user.setRoles(roles);
 
-        // 6) Borrar imagen anterior si existe…
+        // 6) Procesar imagen (si viene) y borrar anterior
         if (user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().isBlank()) {
             String prev = user.getProfilePictureUrl();
             int slash = prev.lastIndexOf('/');
             if (slash >= 0 && slash < prev.length() - 1) {
-                String oldFilename = prev.substring(slash + 1);
-                storageService.deleteFile(oldFilename, "profileimages");
+                storageService.deleteFile(prev.substring(slash + 1), "profileimages");
             }
         }
-
-        // 7) Procesar nueva imagen
         if (profileImage != null && !profileImage.isEmpty()) {
-            try {
-                String filename = storageService.saveFile(
-                        profileImage,
-                        profileImage.getOriginalFilename(),
-                        "profileimages"
-                );
-                String imageUrl = baseUrl + "/mediafiles/profileimages/" + filename;
-                user.setProfilePictureUrl(imageUrl);
-            } catch (Exception e) {
-                throw new CustomException(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Error al procesar imagen de perfil: " + e.getMessage()
-                );
-            }
+            String filename = storageService.saveFile(
+                    profileImage,
+                    profileImage.getOriginalFilename(),
+                    "profileimages"
+            );
+            user.setProfilePictureUrl(baseUrl + "/mediafiles/profileimages/" + filename);
         }
 
-        // 8) Fecha de actualización
-        user.setUpdatedAt(LocalDateTime.now());
+        // 7) **Incrementar versión de token** para invalidar JWTs anteriores
+        user.incrementTokenVersion();
 
-        // 9) Guardar y devolver solo mensaje
+        // 8) Actualizar timestamp y guardar
+        user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
-        return new UserResponse(user.getUserName() + " ha sido actualizado");
+
+        // 9) Respuesta mínima, avisando de logout forzado
+        return new UserResponse(
+                user.getUserName() +
+                        " ha sido actualizado correctamente. Por seguridad, su sesión actual se invalidará; por favor, inicie sesión de nuevo."
+        );
     }
 
     public Map<String, Boolean> deleteUser(Long id) {

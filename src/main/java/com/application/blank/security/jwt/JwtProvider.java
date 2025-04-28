@@ -1,14 +1,16 @@
 package com.application.blank.security.jwt;
 
+import com.application.blank.exception.CustomException;
 import com.application.blank.security.dto.JwtDTO;
 import com.application.blank.security.entity.PrincipalUser;
+import com.application.blank.security.entity.User;
+import com.application.blank.security.repository.UserRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.GrantedAuthority;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
@@ -16,19 +18,20 @@ import javax.crypto.SecretKey;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class JwtProvider {
-
-    private static final Logger logger = LoggerFactory.getLogger(JwtProvider.class);
 
     @Value("${jwt.secret}")
     private String secret;
 
     @Value("${jwt.expiration}")
     private int expiration; // en segundos
+
+    @Autowired
+    private UserRepository userRepository;
 
     private SecretKey getSecretKey() {
         byte[] keyBytes = Decoders.BASE64.decode(secret);
@@ -38,63 +41,99 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
+    /**
+     * Genera un JWT que incluye:
+     *  - sub (username)
+     *  - roles
+     *  - tv (tokenVersion de la entidad User)
+     *  - iat / exp
+     */
     public String generateToken(Authentication authentication) {
         PrincipalUser principalUser = (PrincipalUser) authentication.getPrincipal();
+
         List<String> roles = principalUser.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority).toList();
+                .map(a -> a.getAuthority())
+                .toList();
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", principalUser.getUsername());
         claims.put("roles", roles);
+        claims.put("tv", principalUser.getTokenVersion());       // <-- tokenVersion
         claims.put("iat", Instant.now().getEpochSecond());
         claims.put("exp", Instant.now().plusSeconds(expiration).getEpochSecond());
 
         return Jwts.builder()
-                .claims(claims)
+                .setClaims(claims)
                 .signWith(getSecretKey())
                 .compact();
     }
 
-    public String getNombreUsuarioFromToken(String token) {
-        JwtParser parser = Jwts.parser()
+    /**
+     * Extrae los claims aunque el token ya esté expirado.
+     */
+    public Claims getAllClaimsFromToken(String token) {
+        return Jwts.parser()
                 .verifyWith(getSecretKey())
-                .build();
-        Jws<Claims> jws = parser.parseSignedClaims(token);
-        return jws.getPayload().getSubject();
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    public String getNombreUsuarioFromToken(String token) {
+        return getAllClaimsFromToken(token).getSubject();
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser()
-                    .verifyWith(getSecretKey())
-                    .build()
-                    .parseSignedClaims(token);
+            getAllClaimsFromToken(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            logger.error("Token inválido: {}", e.getMessage());
             return false;
         }
     }
 
+    /**
+     * Si el token expiró, intenta refrescarlo:
+     *  - Parsea los claims
+     *  - Compara el 'tv' en el token con el tokenVersion actual en BD
+     *  - Si coincide, renueva iat/exp y devuelve un token nuevo
+     *  - Si no coincide, lanza excepción para obligar re-login
+     */
     public String refreshToken(JwtDTO jwtDto) throws ParseException {
         try {
-            Jwts.parser()
-                    .verifyWith(getSecretKey())
-                    .build()
-                    .parseSignedClaims(jwtDto.getToken());
-            return null; // Si no está expirado, no se refresca
-        } catch (ExpiredJwtException e) {
-            JwtParser parser = Jwts.parser()
-                    .verifyWith(getSecretKey())
-                    .build();
-            Jws<Claims> jws = parser.parseSignedClaims(jwtDto.getToken());
-            Claims claims = jws.getPayload();
+            // si NO está expirado, no refrescamos
+            getAllClaimsFromToken(jwtDto.getToken());
+            return null;
+        } catch (ExpiredJwtException eje) {
+            Claims claims = eje.getClaims();
 
-            claims.put("iat", Instant.now().getEpochSecond());
-            claims.put("exp", Instant.now().plusSeconds(expiration).getEpochSecond());
+            // 1) extraer userId o username
+            String username = claims.getSubject();
+            Integer tvInToken = claims.get("tv", Integer.class);
+
+            // 2) leer usuario de BD
+            User user = userRepository.findByUserName(username)
+                    .orElseThrow(() -> new CustomException(
+                            HttpStatus.UNAUTHORIZED,
+                            "Usuario no encontrado"
+                    ));
+
+            // 3) comparar versiones
+            if (!tvInToken.equals(user.getTokenVersion())) {
+                throw new CustomException(
+                        HttpStatus.UNAUTHORIZED,
+                        "Sus credenciales cambiaron. Vuelva a iniciar sesión."
+                );
+            }
+
+            // 4) renovar fechas
+            Instant now = Instant.now();
+            claims.put("iat", now.getEpochSecond());
+            claims.put("exp", now.plusSeconds(expiration).getEpochSecond());
+            // 'tv' permanece igual en claims
 
             return Jwts.builder()
-                    .claims(claims)
+                    .setClaims(claims)
                     .signWith(getSecretKey())
                     .compact();
         }
@@ -107,7 +146,4 @@ public class JwtProvider {
                 .parseSignedClaims(token);
         return jws.getPayload().getExpiration().toInstant().getEpochSecond();
     }
-
 }
-
-

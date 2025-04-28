@@ -26,6 +26,10 @@ public class User {
     private String email;
     @Column(nullable = false)
     private String password;
+
+    @Column(nullable = false)
+    private Integer tokenVersion = 0;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(joinColumns = @JoinColumn(name = "user_id"),
     inverseJoinColumns = @JoinColumn(name = "rol_id"))
@@ -87,6 +91,17 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public Integer getTokenVersion() {
+        return tokenVersion;
+    }
+    public void setTokenVersion(Integer tokenVersion) {
+        this.tokenVersion = tokenVersion;
+    }
+    /** Llamar justo antes de guardar cuando cambies email/password/username */
+    public void incrementTokenVersion() {
+        this.tokenVersion++;
     }
 
     public Set<Rol> getRoles() {
