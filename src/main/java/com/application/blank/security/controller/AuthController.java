@@ -61,10 +61,21 @@ public class AuthController {
         return ResponseEntity.ok(user);
     }
 
-    @PutMapping("/update/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @Valid @RequestBody NewUserDTO newUserDTO) {
-        User userActualizado = userService.updateUser(id, newUserDTO);
-        return ResponseEntity.ok(userActualizado);
+    @PutMapping(value = "/update/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserResponse> updateUser(
+            @PathVariable Long id,
+            @Valid @ModelAttribute NewUserDTO newUserDTO,
+            @RequestParam(value = "profileImage", required = false) MultipartFile profileImage,
+            HttpServletRequest request) {
+
+        // Construye el baseUrl (p.ej. http://localhost:8080)
+        String baseUrl = ServletUriComponentsBuilder.fromRequestUri(request)
+                .replacePath(null)
+                .build()
+                .toUriString();
+
+        UserResponse response = userService.updateUser(id, newUserDTO, profileImage, baseUrl);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/delete/{id}")

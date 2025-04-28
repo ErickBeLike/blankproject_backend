@@ -138,33 +138,93 @@ public class UserService {
                 .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "No se encontró un usuario para el ID: " + id));
     }
 
-    public User updateUser(Long id, NewUserDTO newUserDTO) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new CustomException(HttpStatus.NOT_FOUND, "No se encontró un usuario para el ID: " + id));
+    public UserResponse updateUser(Long id,
+                                   NewUserDTO dto,
+                                   MultipartFile profileImage,
+                                   String baseUrl) {
 
-        String password = newUserDTO.getPassword().trim();
-        if (password.isEmpty()) {
-            throw new CustomException(HttpStatus.BAD_REQUEST, "contraseña inválida");
+        // 1) Traer usuario existente
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new CustomException(
+                        HttpStatus.NOT_FOUND,
+                        "No se encontró un usuario para el ID: " + id
+                ));
+
+        // 2) Validar y actualizar email
+        String newEmail = dto.getEmail().trim();
+        if (newEmail.isEmpty()) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "email inválido");
+        }
+        if (!newEmail.equalsIgnoreCase(user.getEmail())) {
+            if (userRepository.existsByEmail(newEmail)) {
+                throw new CustomException(
+                        HttpStatus.BAD_REQUEST,
+                        "ese correo ya está en uso por otro usuario"
+                );
+            }
+            user.setEmail(newEmail);
         }
 
-        user.setUserName(newUserDTO.getUserName());
-        user.setPassword(passwordEncoder.encode(password));
+        // 3) Validar y actualizar contraseña
+        String rawPassword = dto.getPassword().trim();
+        if (rawPassword.isEmpty()) {
+            throw new CustomException(HttpStatus.BAD_REQUEST, "contraseña inválida");
+        }
+        user.setPassword(passwordEncoder.encode(rawPassword));
 
+        // 4) Actualizar userName
+        user.setUserName(dto.getUserName());
+
+        // 5) Actualizar roles
         Set<Rol> roles = new HashSet<>();
-        roles.add(rolService.getByRolName(RolName.ROLE_USER).get());
-        if (newUserDTO.getRoles().contains("admin")) {
-            roles.add(rolService.getByRolName(RolName.ROLE_ADMIN).get());
+        roles.add(rolService.getByRolName(RolName.ROLE_USER)
+                .orElseThrow(() -> new CustomException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "rol USER no encontrado"
+                )));
+        if (dto.getRoles() != null && dto.getRoles().contains("admin")) {
+            roles.add(rolService.getByRolName(RolName.ROLE_ADMIN)
+                    .orElseThrow(() -> new CustomException(
+                            HttpStatus.INTERNAL_SERVER_ERROR,
+                            "rol ADMIN no encontrado"
+                    )));
         }
         user.setRoles(roles);
 
-        /**
-         * Modificación de la fecha dde actualización
-         */
+        // 6) Borrar imagen anterior si existe…
+        if (user.getProfilePictureUrl() != null && !user.getProfilePictureUrl().isBlank()) {
+            String prev = user.getProfilePictureUrl();
+            int slash = prev.lastIndexOf('/');
+            if (slash >= 0 && slash < prev.length() - 1) {
+                String oldFilename = prev.substring(slash + 1);
+                storageService.deleteFile(oldFilename, "profileimages");
+            }
+        }
+
+        // 7) Procesar nueva imagen
+        if (profileImage != null && !profileImage.isEmpty()) {
+            try {
+                String filename = storageService.saveFile(
+                        profileImage,
+                        profileImage.getOriginalFilename(),
+                        "profileimages"
+                );
+                String imageUrl = baseUrl + "/mediafiles/profileimages/" + filename;
+                user.setProfilePictureUrl(imageUrl);
+            } catch (Exception e) {
+                throw new CustomException(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "Error al procesar imagen de perfil: " + e.getMessage()
+                );
+            }
+        }
+
+        // 8) Fecha de actualización
         user.setUpdatedAt(LocalDateTime.now());
 
+        // 9) Guardar y devolver solo mensaje
         userRepository.save(user);
-
-        return user;
+        return new UserResponse(user.getUserName() + " ha sido actualizado");
     }
 
     public Map<String, Boolean> deleteUser(Long id) {
