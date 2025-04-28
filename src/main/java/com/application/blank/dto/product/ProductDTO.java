@@ -1,6 +1,7 @@
 package com.application.blank.dto.product;
 
 import com.application.blank.entity.product.Product;
+import com.application.blank.entity.product.ProductCategory;
 
 import java.time.LocalDateTime;
 
@@ -9,7 +10,7 @@ public class ProductDTO {
 
     private String productName;
     private String productDescription;
-    private Product productCategory;
+    private ProductCategory productCategory;
 
     private int stock;
     private Double productPrice;
@@ -20,7 +21,7 @@ public class ProductDTO {
     public ProductDTO() {
     }
 
-    public ProductDTO(Long productId, String productName, String productDescription, Product productCategory, int stock, Double productPrice, LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public ProductDTO(Long productId, String productName, String productDescription, ProductCategory productCategory, int stock, Double productPrice, LocalDateTime createdAt, LocalDateTime updatedAt) {
         this.productId = productId;
         this.productName = productName;
         this.productDescription = productDescription;
@@ -55,11 +56,11 @@ public class ProductDTO {
         this.productDescription = productDescription;
     }
 
-    public Product getProductCategory() {
+    public ProductCategory getProductCategory() {
         return productCategory;
     }
 
-    public void setProductCategory(Product productCategory) {
+    public void setProductCategory(ProductCategory productCategory) {
         this.productCategory = productCategory;
     }
 

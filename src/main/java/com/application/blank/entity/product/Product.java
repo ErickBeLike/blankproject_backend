@@ -1,6 +1,5 @@
 package com.application.blank.entity.product;
 
-import com.application.blank.dto.product.ProductCategory;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
@@ -12,16 +11,17 @@ public class Product {
     @Column
     private Long productId;
 
-    @Column
+    @Column(nullable = false)
     private String productName;
     @Column
     private String productDescription;
-    @Column
+    @Enumerated(EnumType.STRING)
+    @Column (nullable = false)
     private ProductCategory productCategory;
 
     @Column
     private int stock;
-    @Column
+    @Column(nullable = false)
     private int productPrice;
 
     @Column(updatable = false)

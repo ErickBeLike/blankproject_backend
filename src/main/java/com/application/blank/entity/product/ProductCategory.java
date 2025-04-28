@@ -1,4 +1,4 @@
-package com.application.blank.dto.product;
+package com.application.blank.entity.product;
 
 public enum ProductCategory {
     // Bebidas
